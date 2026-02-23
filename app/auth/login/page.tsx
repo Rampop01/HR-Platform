@@ -38,7 +38,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex bg-white">
       {/* Left Side - Login Form */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center px-12 py-16 bg-white">
+      <div className="w-full lg:w-1/2 flex flex-col justify-center px-6 sm:px-12 py-16 bg-white">
         <div className="max-w-sm mx-auto w-full">
           {/* Logo + Subtitle - Centered */}
           <div className="text-center mb-10">
@@ -147,7 +147,7 @@ export default function LoginPage() {
         {/* Background Image */}
         <div className="absolute inset-0 opacity-20">
           <Image
-            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Login%20Image-q8URuCMxbzLfIiZFiqJrra0SYWx4l7.png"
+            src="/loginbg.jpg"
             alt="Background"
             fill
             className="object-cover"
