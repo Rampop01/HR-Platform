@@ -1,4 +1,5 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://apitest.hcmatrix.co'
+// All API calls go through our Next.js proxy to avoid CORS issues
+const PROXY_BASE = '/api/proxy'
 
 export interface LoginRequest {
   email: string
@@ -10,6 +11,7 @@ export interface LoginResponse {
     id: number
     name: string
     email: string
+    [key: string]: any
   }
   token: string
 }
@@ -32,6 +34,7 @@ export interface Employee {
   status: string
   start_date: string
   avatar?: string
+  [key: string]: any
 }
 
 export interface EmployeesResponse {
@@ -63,12 +66,14 @@ async function apiCall<T>(
   body?: Record<string, unknown>,
   token?: string
 ): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint}`
-  
+  // Route through the proxy: /api/proxy/api/auth/login → proxied to https://apitest.hcmatrix.co/api/auth/login
+  const url = `${PROXY_BASE}${endpoint}`
+
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
   }
-  
+
   if (token) {
     headers['Authorization'] = `Bearer ${token}`
   }
@@ -78,26 +83,61 @@ async function apiCall<T>(
     headers,
     body: body ? JSON.stringify(body) : undefined,
   })
-  
+
   const contentType = response.headers.get('content-type')
   let responseData: any
-  
+
   if (contentType?.includes('application/json')) {
     responseData = await response.json()
   } else {
     const text = await response.text()
     throw new Error(`API returned non-JSON response: ${response.status}`)
   }
-  
+
   if (!response.ok) {
-    const errorMessage = responseData?.message || responseData?.error || `API error: ${response.status}`
+    const errorMessage =
+      responseData?.message ||
+      responseData?.error ||
+      `API error: ${response.status}`
     throw new Error(errorMessage)
   }
-  
+
   return responseData as T
 }
 
+function normalizeEmployeesResponse(
+  response: any,
+  page: number
+): EmployeesResponse {
+  // The API might return: { data: [...] } or just an array
+  if (response.data && Array.isArray(response.data)) {
+    return {
+      data: response.data,
+      current_page: response.current_page ?? page,
+      per_page: response.per_page ?? 15,
+      total: response.total ?? response.data.length,
+      next_page_url: response.next_page_url ?? null,
+      prev_page_url: response.prev_page_url ?? null,
+    }
+  }
+
+  if (Array.isArray(response)) {
+    return {
+      data: response,
+      current_page: page,
+      per_page: 15,
+      total: response.length,
+      next_page_url: null,
+      prev_page_url: null,
+    }
+  }
+
+  // Fallback: treat the whole response as-is
+  return response as EmployeesResponse
+}
+
 export const api = {
+  // 1. Login
   async login(email: string, password: string): Promise<LoginResponse> {
     return apiCall<LoginResponse>('/api/auth/login', 'POST', {
       email,
@@ -105,44 +145,48 @@ export const api = {
     })
   },
 
+  // 2. Logout
   async logout(token: string): Promise<void> {
     await apiCall('/api/v1/logout', 'POST', {}, token)
   },
 
+  // 3. Dashboard
   async getDashboard(token: string): Promise<DashboardData> {
     return apiCall<DashboardData>('/api/v1/dashboard', 'GET', undefined, token)
   },
 
+  // 4. Fetch Employees (Paginated)
   async getEmployees(
     token: string,
     page: number = 1,
     params?: Record<string, string>
   ): Promise<EmployeesResponse> {
-    const queryString = new URLSearchParams({ page: page.toString(), ...params }).toString()
-    const response = await apiCall<any>(`/api/v1/employee?${queryString}`, 'GET', undefined, token)
-    
-    // Handle different response formats
-    if (response.data && Array.isArray(response.data)) {
-      return response as EmployeesResponse
-    } else if (Array.isArray(response)) {
-      // If API returns raw array, wrap it
-      return {
-        data: response,
-        current_page: page,
-        per_page: 10,
-        total: response.length,
-        next_page_url: null,
-        prev_page_url: null,
-      }
-    }
-    
-    return response as EmployeesResponse
+    const queryString = new URLSearchParams({
+      page: page.toString(),
+      ...params,
+    }).toString()
+    const response = await apiCall<any>(
+      `/api/v1/employee?${queryString}`,
+      'GET',
+      undefined,
+      token
+    )
+    return normalizeEmployeesResponse(response, page)
   },
 
+  // 5. Fetch Single Employee
   async getEmployee(token: string, id: number): Promise<EmployeeDetail> {
-    return apiCall<EmployeeDetail>(`/api/v1/employee/${id}`, 'GET', undefined, token)
+    const response = await apiCall<any>(
+      `/api/v1/employee/${id}`,
+      'GET',
+      undefined,
+      token
+    )
+    // API might return { data: employee } or just employee
+    return response.data || response
   },
 
+  // 6. Search Employees
   async searchEmployees(
     token: string,
     query: Record<string, string>,
@@ -150,23 +194,12 @@ export const api = {
   ): Promise<EmployeesResponse> {
     const params = { ...query, page: page.toString() }
     const queryString = new URLSearchParams(params).toString()
-    const response = await apiCall<any>(`/api/v1/employee?${queryString}`, 'GET', undefined, token)
-    
-    // Handle different response formats
-    if (response.data && Array.isArray(response.data)) {
-      return response as EmployeesResponse
-    } else if (Array.isArray(response)) {
-      // If API returns raw array, wrap it
-      return {
-        data: response,
-        current_page: page,
-        per_page: 10,
-        total: response.length,
-        next_page_url: null,
-        prev_page_url: null,
-      }
-    }
-    
-    return response as EmployeesResponse
+    const response = await apiCall<any>(
+      `/api/v1/employee?${queryString}`,
+      'GET',
+      undefined,
+      token
+    )
+    return normalizeEmployeesResponse(response, page)
   },
 }
