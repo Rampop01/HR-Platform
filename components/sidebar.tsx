@@ -57,17 +57,15 @@ export default function Sidebar() {
 
   return (
     <div className="w-64 bg-white border-r border-gray-200 flex flex-col h-screen fixed left-0 top-0">
-      {/* Header */}
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center gap-3 mb-4">
-          <Image
-            src="/logo.png"
-            alt="HCMatrix"
-            width={120}
-            height={48}
-            className="w-auto h-12"
-          />
-        </div>
+      {/* Header - height matches the main header bar */}
+      <div className="h-[65px] px-6 border-b border-gray-200 flex items-center">
+        <Image
+          src="/logo.png"
+          alt="HCMatrix"
+          width={120}
+          height={40}
+          className="w-auto h-9"
+        />
       </div>
 
       {/* Navigation */}
@@ -81,8 +79,8 @@ export default function Sidebar() {
                 <Link
                   href={item.href}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive
-                      ? 'bg-blue-50 text-blue-600'
-                      : 'text-gray-600 hover:bg-gray-50'
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-600 hover:bg-gray-50'
                     }`}
                 >
                   <Icon className="w-5 h-5" />

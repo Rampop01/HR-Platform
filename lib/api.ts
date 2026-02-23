@@ -58,6 +58,7 @@ export interface EmployeeDetail extends Employee {
   next_of_kin_phone: string
   tenure_years: number
   tenure_months: number
+  spouse: string | null
 }
 
 async function apiCall<T>(
@@ -66,16 +67,19 @@ async function apiCall<T>(
   body?: Record<string, unknown>,
   token?: string
 ): Promise<T> {
-  // Route through the proxy: /api/proxy/api/auth/login → proxied to https://apitest.hcmatrix.co/api/auth/login
   const url = `${PROXY_BASE}${endpoint}`
 
   const headers: HeadersInit = {
-    'Content-Type': 'application/json',
     'Accept': 'application/json',
   }
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`
+  }
+
+  // Only set Content-Type for requests with a body
+  if (body) {
+    headers['Content-Type'] = 'application/json'
   }
 
   const response = await fetch(url, {
@@ -105,35 +109,78 @@ async function apiCall<T>(
   return responseData as T
 }
 
+// Map raw API employee to our Employee interface
+function mapEmployee(raw: any): Employee {
+  return {
+    ...raw,
+    name: raw.full_name || raw.name || '',
+    email: raw.email || '',
+    job_title: raw.job_title || '',
+    department: raw.department || '',
+    location: raw.location || '',
+    employment_type: raw.employment_type || raw.emp_type || '',
+    status: raw.status || '',
+    start_date: raw.start_date || '',
+    avatar: raw.image_url || raw.avatar || '',
+  }
+}
+
+// Map raw API employee detail to our EmployeeDetail interface
+function mapEmployeeDetail(raw: any): EmployeeDetail {
+  return {
+    ...mapEmployee(raw),
+    phone: raw.phone || raw.phone_number || '',
+    date_of_birth: raw.dob || raw.date_of_birth || '',
+    address: raw.address || '',
+    salary: raw.current_salary ?? raw.salary ?? 0,
+    manager: raw.manager || '',
+    manager_id: raw.manager_id || 0,
+    next_of_kin_name: raw.next_of_kin || raw.next_of_kin_name || '',
+    next_of_kin_relationship: raw.next_of_kin_relationship || raw.relationship || '',
+    next_of_kin_phone: raw.phone_no_nok || raw.next_of_kin_phone || '',
+    tenure_years: raw.tenure_years ?? 0,
+    tenure_months: raw.tenure_months ?? 0,
+    spouse: raw.spouse || null,
+  }
+}
+
 function normalizeEmployeesResponse(
   response: any,
   page: number
 ): EmployeesResponse {
-  // The API might return: { data: [...] } or just an array
-  if (response.data && Array.isArray(response.data)) {
+  // API returns: { success: true, data: { current_page, data: [...], ... } }
+  const paginated = response.data || response
+
+  if (paginated.data && Array.isArray(paginated.data)) {
     return {
-      data: response.data,
-      current_page: response.current_page ?? page,
-      per_page: response.per_page ?? 15,
-      total: response.total ?? response.data.length,
-      next_page_url: response.next_page_url ?? null,
-      prev_page_url: response.prev_page_url ?? null,
+      data: paginated.data.map(mapEmployee),
+      current_page: paginated.current_page ?? page,
+      per_page: paginated.per_page ?? 15,
+      total: paginated.total ?? paginated.data.length,
+      next_page_url: paginated.next_page_url ?? null,
+      prev_page_url: paginated.prev_page_url ?? null,
     }
   }
 
-  if (Array.isArray(response)) {
+  if (Array.isArray(paginated)) {
     return {
-      data: response,
+      data: paginated.map(mapEmployee),
       current_page: page,
       per_page: 15,
-      total: response.length,
+      total: paginated.length,
       next_page_url: null,
       prev_page_url: null,
     }
   }
 
-  // Fallback: treat the whole response as-is
-  return response as EmployeesResponse
+  return {
+    data: [],
+    current_page: page,
+    per_page: 15,
+    total: 0,
+    next_page_url: null,
+    prev_page_url: null,
+  }
 }
 
 export const api = {
@@ -152,7 +199,15 @@ export const api = {
 
   // 3. Dashboard
   async getDashboard(token: string): Promise<DashboardData> {
-    return apiCall<DashboardData>('/api/v1/dashboard', 'GET', undefined, token)
+    const response = await apiCall<any>('/api/v1/dashboard', 'GET', undefined, token)
+    // API may return { success: true, data: { ... } }
+    const data = response.data || response
+    return {
+      total_employees: data.total_employees ?? 0,
+      new_hire_count: data.new_hire_count ?? 0,
+      upcoming_event: data.upcoming_event ?? 0,
+      open_positions: data.open_positions ?? 0,
+    }
   },
 
   // 4. Fetch Employees (Paginated)
@@ -182,8 +237,9 @@ export const api = {
       undefined,
       token
     )
-    // API might return { data: employee } or just employee
-    return response.data || response
+    // API returns { success: true, data: { ... } }
+    const raw = response.data || response
+    return mapEmployeeDetail(raw)
   },
 
   // 6. Search Employees

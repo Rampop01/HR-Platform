@@ -9,7 +9,7 @@ interface HeaderProps {
 
 export default function Header({ title }: HeaderProps) {
   return (
-    <header className="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between">
+    <header className="h-[65px] bg-white border-b border-gray-200 px-8 flex items-center justify-between">
       <div>
         {title && (
           <h1 className="text-2xl font-bold text-gray-900">{title}</h1>

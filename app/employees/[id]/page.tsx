@@ -7,7 +7,8 @@ import Sidebar from '@/components/sidebar'
 import Header from '@/components/header'
 import { api, EmployeeDetail } from '@/lib/api'
 import { auth } from '@/lib/auth'
-import { ArrowLeft, Mail, Phone, MapPin, Building2, Calendar, DollarSign, User2, Heart } from 'lucide-react'
+import { ArrowLeft, Calendar } from 'lucide-react'
+import Image from 'next/image'
 
 export default function EmployeeDetailPage() {
   const router = useRouter()
@@ -70,32 +71,22 @@ export default function EmployeeDetailPage() {
   }
 
   const getStatusBadge = (status: string) => {
-    if (!status) return <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700">N/A</span>
+    if (!status) return <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">N/A</span>
     const statusMap: Record<string, { bg: string; text: string }> = {
       active: { bg: 'bg-green-100', text: 'text-green-700' },
-      onboarding: { bg: 'bg-blue-100', text: 'text-blue-700' },
-      'on leave': { bg: 'bg-yellow-100', text: 'text-yellow-700' },
-      onleave: { bg: 'bg-yellow-100', text: 'text-yellow-700' },
+      onboarding: { bg: 'bg-yellow-100', text: 'text-yellow-700' },
+      'on leave': { bg: 'bg-orange-100', text: 'text-orange-700' },
+      onleave: { bg: 'bg-orange-100', text: 'text-orange-700' },
       inactive: { bg: 'bg-gray-100', text: 'text-gray-700' },
       terminated: { bg: 'bg-red-100', text: 'text-red-700' },
     }
     const config = statusMap[status.toLowerCase()] || { bg: 'bg-gray-100', text: 'text-gray-700' }
     return (
-      <span className={`px-3 py-1 rounded-full text-sm font-medium ${config.bg} ${config.text}`}>
+      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${config.bg} ${config.text}`}>
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </span>
     )
   }
-
-  const InfoField = ({ icon: Icon, label, value }: { icon?: any; label: string; value: any }) => (
-    <div className="flex items-start gap-3">
-      {Icon && <Icon className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />}
-      <div>
-        <label className="block text-sm text-gray-500 mb-0.5">{label}</label>
-        <p className="text-gray-900 font-medium">{value || 'N/A'}</p>
-      </div>
-    </div>
-  )
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -105,87 +96,108 @@ export default function EmployeeDetailPage() {
 
         <main className="flex-1 p-8">
           {/* Back Button */}
-          <Link href="/employees" className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition-colors">
+          <Link href="/employees" className="inline-flex items-center gap-2 text-gray-700 hover:text-gray-900 mb-6 transition-colors text-sm font-medium">
             <ArrowLeft className="w-4 h-4" />
             Back to Employees
           </Link>
 
-          {/* Employee Header */}
-          <div className="bg-white rounded-lg border border-gray-200 p-8 mb-6 shadow-sm">
-            <div className="flex items-start gap-6">
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-3xl font-bold flex-shrink-0">
-                {employee.name?.charAt(0)?.toUpperCase() || '?'}
+          {/* Employee Header Card */}
+          <div className="bg-white rounded-xl border border-gray-200 p-8 mb-6 shadow-sm">
+            <div className="flex items-center gap-6">
+              <div className="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                <Image
+                  src="/placeholder-user.jpg"
+                  alt={employee.name || 'Employee'}
+                  width={80}
+                  height={80}
+                  className="w-full h-full object-cover rounded-full"
+                />
               </div>
-              <div className="flex-1">
-                <h1 className="text-3xl font-bold text-gray-900">{employee.name || 'Unknown'}</h1>
-                <p className="text-lg text-gray-600 mt-1">{employee.job_title || 'No title'}</p>
-                <div className="flex items-center gap-4 mt-4 flex-wrap">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">{employee.name || 'Unknown'}</h1>
+                <p className="text-gray-500 mt-0.5">{employee.job_title || 'No title'}</p>
+                <div className="flex items-center gap-3 mt-3">
                   {getStatusBadge(employee.status)}
                   {employee.employment_type && (
-                    <span className="text-gray-600">{employee.employment_type}</span>
-                  )}
-                  {employee.department && (
-                    <span className="text-gray-500">•  {employee.department}</span>
-                  )}
-                  {employee.location && (
-                    <span className="text-gray-500 flex items-center gap-1">
-                      <MapPin className="w-4 h-4" /> {employee.location}
-                    </span>
+                    <span className="text-sm text-gray-500">{employee.employment_type}</span>
                   )}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Tabs */}
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
-            <div className="border-b border-gray-200 flex">
-              <button
-                onClick={() => setActiveTab('personal')}
-                className={`px-6 py-4 font-medium transition-colors ${activeTab === 'personal'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-600 hover:text-gray-900'
-                  }`}
-              >
-                Personal Info
-              </button>
-              <button
-                onClick={() => setActiveTab('employment')}
-                className={`px-6 py-4 font-medium transition-colors ${activeTab === 'employment'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-600 hover:text-gray-900'
-                  }`}
-              >
-                Employment
-              </button>
+          {/* Tabs + Content */}
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+            {/* Tab Switcher */}
+            <div className="border-b border-gray-200 bg-gray-50/50 px-6 pt-4 pb-0">
+              <div className="inline-flex bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setActiveTab('personal')}
+                  className={`px-5 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'personal'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                >
+                  Personal Info
+                </button>
+                <button
+                  onClick={() => setActiveTab('employment')}
+                  className={`px-5 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'employment'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                >
+                  Employment
+                </button>
+              </div>
             </div>
 
+            {/* Tab Content */}
             <div className="p-8">
               {activeTab === 'personal' && (
                 <div>
                   <h2 className="text-lg font-bold text-gray-900 mb-6">Personal Information</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <InfoField icon={Mail} label="Email" value={employee.email} />
-                    <InfoField icon={Phone} label="Phone" value={employee.phone} />
-                    <InfoField icon={Calendar} label="Date of Birth" value={
-                      employee.date_of_birth
-                        ? new Date(employee.date_of_birth).toLocaleDateString()
-                        : null
-                    } />
-                    <InfoField icon={Building2} label="Department" value={employee.department} />
-                    <div className="md:col-span-2">
-                      <InfoField icon={MapPin} label="Address" value={employee.address} />
+                  <div className="grid grid-cols-5 gap-6 mb-10">
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Email</p>
+                      <p className="text-sm text-gray-900 font-medium">{employee.email || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Phone</p>
+                      <p className="text-sm text-gray-900 font-medium">{employee.phone || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Date of Birth</p>
+                      <p className="text-sm text-gray-900 font-medium">
+                        {employee.date_of_birth
+                          ? new Date(employee.date_of_birth).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+                          : 'N/A'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Address</p>
+                      <p className="text-sm text-gray-900 font-medium">{employee.address || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Department</p>
+                      <p className="text-sm text-gray-900 font-medium">{employee.department || 'N/A'}</p>
                     </div>
                   </div>
 
-                  <h3 className="text-lg font-bold text-gray-900 mt-10 mb-6 flex items-center gap-2">
-                    <Heart className="w-5 h-5 text-red-500" />
-                    Emergency Contact / Next of Kin
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <InfoField label="Name" value={employee.next_of_kin_name} />
-                    <InfoField label="Relationship" value={employee.next_of_kin_relationship} />
-                    <InfoField icon={Phone} label="Phone" value={employee.next_of_kin_phone} />
+                  <h3 className="text-lg font-bold text-gray-900 mb-6">Emergency Contact</h3>
+                  <div className="grid grid-cols-3 gap-6">
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Name</p>
+                      <p className="text-sm text-gray-900 font-medium">{employee.next_of_kin_name || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Relationship</p>
+                      <p className="text-sm text-gray-900 font-medium">{employee.next_of_kin_relationship || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Phone</p>
+                      <p className="text-sm text-gray-900 font-medium">{employee.next_of_kin_phone || 'N/A'}</p>
+                    </div>
                   </div>
                 </div>
               )}
@@ -193,32 +205,48 @@ export default function EmployeeDetailPage() {
               {activeTab === 'employment' && (
                 <div>
                   <h2 className="text-lg font-bold text-gray-900 mb-6">Employment Details</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                    <InfoField label="Job Title" value={employee.job_title} />
-                    <InfoField icon={Building2} label="Department" value={employee.department} />
-                    <InfoField label="Employment Type" value={employee.employment_type} />
-                    <InfoField icon={Calendar} label="Start Date" value={
-                      employee.start_date
-                        ? new Date(employee.start_date).toLocaleDateString()
-                        : null
-                    } />
-                    <InfoField icon={User2} label="Manager" value={employee.manager} />
-                    <InfoField icon={DollarSign} label="Current Salary" value={
-                      employee.salary != null
-                        ? `₦${employee.salary.toLocaleString()}`
-                        : null
-                    } />
-                    <InfoField icon={MapPin} label="Location" value={employee.location} />
+                  <div className="grid grid-cols-2 gap-x-16 gap-y-6 mb-10">
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Job Title</p>
+                      <p className="text-sm text-gray-900 font-medium">{employee.job_title || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Department</p>
+                      <p className="text-sm text-gray-900 font-medium">{employee.department || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Employment Type</p>
+                      <p className="text-sm text-gray-900 font-medium">{employee.employment_type || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Start Date</p>
+                      <p className="text-sm text-gray-900 font-medium flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                        {employee.start_date
+                          ? new Date(employee.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+                          : 'N/A'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Manager</p>
+                      <p className="text-sm text-gray-900 font-medium">{employee.manager || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Current Salary</p>
+                      <p className="text-sm text-gray-900 font-medium">
+                        {employee.salary != null
+                          ? `$ ${employee.salary.toLocaleString()}`
+                          : 'N/A'}
+                      </p>
+                    </div>
                   </div>
 
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Tenure at Company</h3>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 inline-block">
-                    <p className="text-blue-900 font-medium text-lg">
-                      {employee.tenure_years != null
-                        ? `${employee.tenure_years} year${employee.tenure_years !== 1 ? 's' : ''}${employee.tenure_months != null ? `, ${employee.tenure_months} month${employee.tenure_months !== 1 ? 's' : ''}` : ''}`
-                        : 'N/A'}
-                    </p>
-                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-3">Tenure at Company</h3>
+                  <p className="text-sm text-gray-900 font-medium">
+                    {employee.tenure_years != null
+                      ? `${employee.tenure_years} year${employee.tenure_years !== 1 ? 's' : ''}${employee.tenure_months != null ? `, ${employee.tenure_months} month${employee.tenure_months !== 1 ? 's' : ''}` : ''}`
+                      : 'N/A'}
+                  </p>
                 </div>
               )}
             </div>

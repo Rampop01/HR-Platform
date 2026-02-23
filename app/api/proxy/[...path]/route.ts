@@ -9,7 +9,6 @@ async function proxyRequest(req: NextRequest) {
   const targetUrl = `${API_BASE_URL}/${pathSegments}${url.search}`
 
   const headers: HeadersInit = {
-    'Content-Type': 'application/json',
     'Accept': 'application/json',
   }
 
@@ -24,8 +23,9 @@ async function proxyRequest(req: NextRequest) {
     headers,
   }
 
-  // Forward the body for POST/PUT/PATCH requests
+  // Forward the body and Content-Type for POST/PUT/PATCH requests only
   if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
+    headers['Content-Type'] = 'application/json'
     try {
       const body = await req.json()
       fetchOptions.body = JSON.stringify(body)
