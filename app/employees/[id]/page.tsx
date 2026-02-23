@@ -163,7 +163,7 @@ export default function EmployeeDetailPage() {
                 <div className="space-y-10">
                   <div>
                     <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-blue-600"></div>
+
                       Personal Information
                     </h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-y-8 gap-x-6">
@@ -198,7 +198,6 @@ export default function EmployeeDetailPage() {
 
                   <div className="pt-4 border-t border-gray-50">
                     <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-orange-400"></div>
                       Emergency Contact
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-8 gap-x-6">
@@ -223,7 +222,6 @@ export default function EmployeeDetailPage() {
                 <div className="space-y-10">
                   <div>
                     <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-blue-600"></div>
                       Employment Details
                     </h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-8 gap-x-12">
@@ -273,8 +271,8 @@ export default function EmployeeDetailPage() {
 
                   <div className="pt-4 border-t border-gray-50">
                     <h3 className="text-lg font-bold text-gray-900 mb-4">Tenure at Company</h3>
-                    <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 inline-block">
-                      <p className="text-sm text-blue-700 font-bold">
+                    <div className="">
+                      <p className="text-sm text-gray-400 font-bold">
                         {employee.tenure_years != null
                           ? `${employee.tenure_years} year${employee.tenure_years !== 1 ? 's' : ''}${employee.tenure_months != null ? `, ${employee.tenure_months} month${employee.tenure_months !== 1 ? 's' : ''}` : ''}`
                           : 'N/A'}
